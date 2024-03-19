@@ -12,6 +12,13 @@ export async function createGameSession(session_handle: string, cards: Card[]) {
 }
 
 export async function createGamePlayer(sessionId: number, playerName: string) {
+	const currentPlayers = await supabase.from('players')
+		.select()
+		.eq('name', playerName)
+		.eq('session_id', sessionId);
+	if (currentPlayers.data?.length) {
+		return null;
+	}
 	const response = await supabase.from('players')
 	.insert([{ session_id: sessionId, name: playerName }])
 	.select('player_id')

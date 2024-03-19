@@ -20,7 +20,10 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 	const session = await getGameSession(sessionHandle);
 	const name = formData.get('name') as string;
 	const playerId = await createGamePlayer(session.id, name);
-	return json({ name, playerId });
+	if (playerId === null) {
+		return json({ playerId: null, name, nameExists: true });
+	} 
+	return json({ name, playerId, nameExists: false });
 };
 
 export default function Game() {
@@ -28,8 +31,7 @@ export default function Game() {
 	const cards = useLoaderData<typeof loader>();
 	const actionData = useActionData<typeof action>();
 	const [savedPlayerId, setSavedPlayerId] = useState<number | null>(null);
-	const name = actionData?.name;
-	const formPlayerId = actionData?.playerId;
+	const { name, playerId: formPlayerId, nameExists } = actionData ?? {};
 	const playerId = savedPlayerId ?? formPlayerId;
 
 	useEffect(() => {
@@ -47,6 +49,7 @@ export default function Game() {
 			<label>
 				Player name:
 				<input type="text" name="name" required />
+				<p style={{ color: 'red' }}>{nameExists ? 'Name already exists' : ''}</p>
 			</label>
 			<button type="submit">Submit</button>
 		</Form>
