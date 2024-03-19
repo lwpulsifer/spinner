@@ -3,3 +3,6 @@ node_modules
 /build
 .env
 .vercel
+.cache
+public/build
+package-lock.json

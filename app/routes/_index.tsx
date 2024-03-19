@@ -1,41 +1,65 @@
+import { useState } from 'react';
 import type { MetaFunction } from "@vercel/remix";
+import { DECK } from "~/game/cards";
+import { Form, useActionData } from "@remix-run/react";
+import { createGameSession, createGamePlayer } from '~/db/game';
+import { redirect } from "@remix-run/node";
+import { savePlayerSession } from '~/session/gameSession';
 
+export const action = async ({ request }) => {
+  const formData = await request.formData();
+  const sessionHandle = formData.get("name");
+  const cards = formData.get("cards");
+  const sessionId = await createGameSession(sessionHandle, cards);
+  if (!sessionId) {
+    throw 'No data';
+  }
+  const playerId = await createGamePlayer(sessionId, formData.get('playerName'));
+  savePlayerSession(sessionHandle, playerId);
+  return redirect(`/game/${sessionHandle}`);
+}
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
+    { title: "Salad Spinner" },
+    { name: "Salad Spinner game", content: "Enjoy :)" },
   ];
 };
 
 export default function Index() {
+  const [cards, setCards] = useState(DECK);
+
+  const cardInputs = cards.map((card, i) => {
+    const { scoringType, type, params } = card;
+    return (
+      <li key={i}>
+        <div>
+          Type: {type}
+        </div>
+        <div>
+          Scoring type: {scoringType}
+        </div>
+        <div>
+          Params: {JSON.stringify(params)}
+        </div>
+      </li>
+    )
+  });
+
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
-      <h1>Welcome to Remix</h1>
-      <ul>
-        <li>
-          <a
-            target="_blank"
-            href="https://remix.run/tutorials/blog"
-            rel="noreferrer"
-          >
-            15m Quickstart Blog Tutorial
-          </a>
-        </li>
-        <li>
-          <a
-            target="_blank"
-            href="https://remix.run/tutorials/jokes"
-            rel="noreferrer"
-          >
-            Deep Dive Jokes App Tutorial
-          </a>
-        </li>
-        <li>
-          <a target="_blank" href="https://remix.run/docs" rel="noreferrer">
-            Remix Docs
-          </a>
-        </li>
-      </ul>
+      <h1>Salad Spinner</h1>
+      <Form method="POST">
+        <label>
+          Game name:
+          <input type="text" name="name" required />
+        </label>
+        <label>
+          Player name:
+          <input type="text" name="playerName" required />
+        </label>
+        {cardInputs}
+        <button type="submit">Submit</button>
+      </Form>
     </div>
   );
 }
