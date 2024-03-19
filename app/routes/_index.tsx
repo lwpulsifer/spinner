@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import type { MetaFunction } from "@vercel/remix";
 import { DECK } from "~/game/cards";
-import { Form, useActionData } from "@remix-run/react";
 import { createGameSession, createGamePlayer } from '~/db/game';
 import { redirect } from "@remix-run/node";
 import { savePlayerSession } from '~/session/gameSession';
+import { Form, useParams, useLoaderData, redirect, useActionData } from "@remix-run/react";
 
 export const action = async ({ request }) => {
   const formData = await request.formData();
@@ -12,10 +12,9 @@ export const action = async ({ request }) => {
   const cards = formData.get("cards");
   const sessionId = await createGameSession(sessionHandle, cards);
   if (!sessionId) {
+    console.log('NO session created')
     throw 'No data';
   }
-  const playerId = await createGamePlayer(sessionId, formData.get('playerName'));
-  savePlayerSession(sessionHandle, playerId);
   return redirect(`/game/${sessionHandle}`);
 }
 export const meta: MetaFunction = () => {
@@ -52,10 +51,6 @@ export default function Index() {
         <label>
           Game name:
           <input type="text" name="name" required />
-        </label>
-        <label>
-          Player name:
-          <input type="text" name="playerName" required />
         </label>
         {cardInputs}
         <button type="submit">Submit</button>

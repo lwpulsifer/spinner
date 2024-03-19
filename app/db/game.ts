@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import type { Card } from '../game/cards.js'
 
 export async function createGameSession(session_handle: string, cards: Card[]) {
+	console.log("Creating game session");
 	const sessionResponse = await supabase.from("game_sessions")
 	.insert([{ session_handle }])
 	.select('id')
