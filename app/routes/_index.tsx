@@ -12,7 +12,6 @@ export const action = async ({ request }) => {
   const cards = formData.get("cards");
   const sessionId = await createGameSession(sessionHandle, cards);
   if (!sessionId) {
-    console.log('NO session created')
     throw 'No data';
   }
   return redirect(`/game/${sessionHandle}`);
