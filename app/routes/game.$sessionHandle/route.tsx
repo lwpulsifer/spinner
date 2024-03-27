@@ -1,18 +1,30 @@
 import { useState, useEffect } from 'react';
 import { Form, useParams, useLoaderData, redirect, useActionData } from "@remix-run/react";
-import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node"; // or cloudflare/deno
-import { createGamePlayer, findGameCards, getGameSession } from "~/db/game";
+import type { LoaderFunctionArgs, ActionFunctionArgs, LinksFunction } from "@remix-run/node"; // or cloudflare/deno
+import { createGamePlayer, findGameCards, getGamePlayer, getGameSession } from "~/db/game";
 import { getPlayerSession, savePlayerSession } from "~/session/gameSession";
 import { json } from "@remix-run/node";
+import { createCookie } from "@remix-run/node"; // or cloudflare/deno
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const userPrefs = createCookie("user-prefs", {
+  maxAge: 604_800, // one week
+});
+
+export const loader = async ({ params, request }: LoaderFunctionArgs) => {
 	const sessionHandle: string = params?.sessionHandle ?? '';
 	const session = await getGameSession(sessionHandle);
 	if (!session) {
 		return redirect('/');
 	}
-	const cards = findGameCards(sessionHandle);
-	return cards;
+	const cookieHeader = request.headers.get("Cookie");
+  const cookie = (await userPrefs.parse(cookieHeader)) || {};
+	const playerId = cookie.playerId;
+	let player;
+	if (playerId) {
+		player = await getGamePlayer(sessionHandle, playerId);
+	}
+	const cards = await findGameCards(sessionHandle);
+	return { cards, player };
 }
 
 export const action = async ({ params, request }: ActionFunctionArgs) => {
@@ -21,30 +33,26 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 	const session = await getGameSession(sessionHandle);
 	const name = formData.get('name') as string;
 	const playerId = await createGamePlayer(session.id, name);
-	if (playerId === null) {
-		return json({ playerId: null, name, nameExists: true });
-	} 
-	return json({ name, playerId, nameExists: false });
+	if (!playerId) {
+		return json({ nameExists: true });
+	}
+	const cookieHeader = request.headers.get("Cookie");
+  const cookie = (await userPrefs.parse(cookieHeader)) || {};
+	cookie.playerId = playerId;
+	return redirect("", {
+    headers: {
+      "Set-Cookie": await userPrefs.serialize(cookie),
+    }
+	});
 };
+
 
 export default function Game() {
 	const { sessionHandle } = useParams();
-	const cards = useLoaderData<typeof loader>();
+	const { cards, player } = useLoaderData<typeof loader>();
 	const actionData = useActionData<typeof action>();
-	const [savedPlayerId, setSavedPlayerId] = useState<number | null>(null);
-	const { name, playerId: formPlayerId, nameExists } = actionData ?? {};
-	const playerId = savedPlayerId ?? formPlayerId;
-
-	useEffect(() => {
-		if (formPlayerId && sessionHandle) {
-			savePlayerSession(sessionHandle, formPlayerId);
-		}
-	}, [formPlayerId])
-
-	useEffect(() => {
-		setSavedPlayerId(getPlayerSession(sessionHandle as string));
-	}, [sessionHandle]);
-
+	const { nameExists } = actionData ?? {};
+	
 	const playerCreationForm = (
 		<Form method="POST">
 			<label>
@@ -57,23 +65,18 @@ export default function Game() {
 	)
 
 	return (
-		<section>
+		<section className={'bg-orange-500'}>
 			<h1>Welcome to Salad Spinner!</h1>
 			<a href='/'>New game</a>
 			<div>
 				Game name: {sessionHandle}
 			</div>
 			{
-				playerId
+				player
 					? (
-						<>
-							<div>
-								Welcome, {name}
-							</div>
-							<div>
-								Cards: {JSON.stringify(cards)}
-							</div>
-						</>
+						<div className='bg-grey-50'>
+							{`Welcome, Player: ${player.name}`}
+						</div>
 					)
 					: playerCreationForm
 			}

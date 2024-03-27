@@ -46,8 +46,8 @@ const typesWithAtLeast = ({ atLeast, value }: { atLeast: number, value: number }
 	return Object.entries(groupBy(hand, hand => hand.type)).filter(([type, cardsOfType]) => cardsOfType.length >= atLeast).length * value;
 }
 
-const missingVeggieType = ({ value }: { value: number }) => (hand: Array<Card>, otherHands: Array<Array<Card>>) => {
-	return Object.values(CardTypeMap).filter(t => hand.find(card => card.type === t) === null).length * value;
+const typesWithAtMost = ({ atMost, value }: { atMost: number, value: number }) => (hand: Array<Card>, otherHands: Array<Array<Card>>) => {
+	return Object.entries(groupBy(hand, hand => hand.type)).filter(([type, cardsOfType]) => cardsOfType.length <= atMost).length * value;
 }
 
 const setOfTypes = ({ types, value }: { types: Partial<{ [k in CardType]: number }>, value: number }) => (hand: Array<Card>, otherHands: Array<Array<Card>>) => {
@@ -96,9 +96,7 @@ export const scoringTypesToRules: { [k in ScoringType]: ScoringRuleFactory } = {
 	'FEWEST_OF_TYPE': fewestOfType,
 	'MOST_OF_TYPE': mostOfType,
 	'TYPES_WITH_AT_LEAST': typesWithAtLeast,
-
-	// TODO: Update
-  'TYPES_WITH_AT_MOST': typesWithAtLeast,
+  'TYPES_WITH_AT_MOST': typesWithAtMost,
 	'SET_OF_TYPES': setOfTypes,
 	'MOST_TOTAL': mostTotal,
 	'LEAST_TOTAL': leastTotal,
@@ -111,9 +109,10 @@ export const DECK: Array<Card> = [
 	{ type: CardTypeMap.B, scoringType: 'LEAST_TOTAL', params: { value: 7 }},
 	{ type: CardTypeMap.C, scoringType: 'TYPES_WITH_AT_LEAST', params: { atLeast: 2, value: 3 }},
 	{ type: CardTypeMap.D, scoringType: 'TYPES_WITH_AT_LEAST', params: { atLeast: 3, value: 5 }},
+	{ type: CardTypeMap.E, scoringType: 'SET_OF_TYPES', params: { types: Object.fromEntries(Object.keys(scoringTypesToRules).map(t => [t, 1])), value: 12 }},
+	{ type: CardTypeMap.F, scoringType: 'TYPES_WITH_AT_MOST', params: { atMost: 0, value: 5 }},
 
-	// { type: CardTypeMap.E, rule: [setOfTypes({ types: Object.fromEntries(CardTypes.map(type => ([type, 1]))) as Record<CardType, number>, value: 12 })]},
-	// { type: CardTypeMap.F, rule: [missingVeggieType({ value: 5})]},
+	
 
 	// // 6 Fewest of type.
 	// ...CardTypes.map(type => ({ type, rule: [ fewestOfType({ type, value: 7 }) ] })),

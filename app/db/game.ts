@@ -1,6 +1,12 @@
 import { supabase } from "./supabase";
 import { createDeck, type Card } from '../game/cards.js'
 
+type Player = {
+	name: string,
+	player_id: number,
+	lead_player: boolean,
+};
+
 export async function createGameSession(session_handle: string, cards: Card[]) {
 	const sessionResponse = await supabase.from("game_sessions")
 	.insert([{ session_handle }])
@@ -27,6 +33,18 @@ export async function createGamePlayer(sessionId: number, playerName: string) {
 	.select('player_id')
 	.single();
 	return response.data?.player_id;
+}
+
+export async function getGamePlayer(session_handle: string, playerId: number) {
+	const session = await getGameSession(session_handle);
+	console.log(session.id);
+	console.log(playerId);
+	const response = await supabase.from('players')
+		.select()
+		.eq('session_id', session.id)
+		.eq('player_id', playerId)
+		.single();
+	return response.data as Player;
 }
 
 export async function getGameSession(sessionHandle: string) {
