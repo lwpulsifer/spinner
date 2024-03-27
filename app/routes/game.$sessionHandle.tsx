@@ -11,7 +11,8 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 	if (!session) {
 		return redirect('/');
 	}
-	return findGameCards(sessionHandle);
+	const cards = findGameCards(sessionHandle);
+	return cards;
 }
 
 export const action = async ({ params, request }: ActionFunctionArgs) => {
@@ -58,6 +59,7 @@ export default function Game() {
 	return (
 		<section>
 			<h1>Welcome to Salad Spinner!</h1>
+			<a href='/'>New game</a>
 			<div>
 				Game name: {sessionHandle}
 			</div>

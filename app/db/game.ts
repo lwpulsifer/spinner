@@ -1,26 +1,29 @@
 import { supabase } from "./supabase";
-import type { Card } from '../game/cards.js'
+import { createDeck, type Card } from '../game/cards.js'
 
 export async function createGameSession(session_handle: string, cards: Card[]) {
-	console.log("Creating game session");
 	const sessionResponse = await supabase.from("game_sessions")
 	.insert([{ session_handle }])
 	.select('id')
 	.single();
-	await supabase.from("session_cards").insert(cards);
+	const res = await supabase.from("session_cards").insert(createDeck(cards));
+	if (res.error) {
+		console.error('Failed inserting cards');
+	}
 	return sessionResponse.data?.id;
 }
 
 export async function createGamePlayer(sessionId: number, playerName: string) {
 	const currentPlayers = await supabase.from('players')
 		.select()
-		.eq('name', playerName)
 		.eq('session_id', sessionId);
-	if (currentPlayers.data?.length) {
+	const players = currentPlayers.data ?? [];
+	const playersWithSameName = players.filter(player => player.name === playerName);
+	if (playersWithSameName.length) {
 		return null;
 	}
 	const response = await supabase.from('players')
-	.insert([{ session_id: sessionId, name: playerName }])
+	.insert([{ session_id: sessionId, name: playerName, lead_player: players.length === 0 }])
 	.select('player_id')
 	.single();
 	return response.data?.player_id;

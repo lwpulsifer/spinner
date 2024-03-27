@@ -149,3 +149,33 @@ export const DECK: Array<Card> = [
 
 	// // TODO 6 3/-1/-1 cards
 ];
+
+function convertToSnakeCase(obj: Object) {
+  const snakeCaseObj = {};
+
+  for (const key in obj) {
+    let snakeCaseKey = key.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
+    snakeCaseObj[snakeCaseKey] = obj[key];
+  }
+
+  return snakeCaseObj;
+}
+
+function shuffleArray<T>(array: Array<T>): Array<T> {
+	const ret = [...array];
+	for (let i = array.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[array[i], array[j]] = [array[j], array[i]];
+	}
+	return ret;
+}
+
+export function createDeck(cards: Array<Card>) {
+	return shuffleArray(cards).map((card, i) => {
+		return {
+			...convertToSnakeCase(card),
+			order: i,
+			deck_index: i % 3,
+		};
+	});
+}

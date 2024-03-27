@@ -9,7 +9,7 @@ import { Form, useParams, useLoaderData, redirect, useActionData } from "@remix-
 export const action = async ({ request }) => {
   const formData = await request.formData();
   const sessionHandle = formData.get("name");
-  const cards = formData.get("cards");
+  const cards = JSON.parse(formData.get("cards"));
   const sessionId = await createGameSession(sessionHandle, cards);
   if (!sessionId) {
     throw 'No data';
@@ -52,6 +52,13 @@ export default function Index() {
           <input type="text" name="name" required />
         </label>
         {cardInputs}
+        <input 
+          type={'text'} 
+          name="cards" 
+          value={JSON.stringify(cards)} 
+          style={{ visibility: 'hidden' }} 
+          readOnly
+        />
         <button type="submit">Submit</button>
       </Form>
     </div>
